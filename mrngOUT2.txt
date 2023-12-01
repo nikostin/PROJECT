@@ -1,0 +1,54 @@
+MRNG Results
+Query: Image1
+Nearest neighbor-1: Image17665
+distanceApproximate: 1681.292063
+distanceTrue: 1681.292063
+Nearest neighbor-2: Image4
+distanceApproximate: 2407.459034
+distanceTrue: 1692.541285
+tAverageApproximate: 0.295131
+tAverageTrue: 0.717877
+MAF: 1.422393
+
+Query: Image2
+Nearest neighbor-1: Image5069
+distanceApproximate: 2944.830046
+distanceTrue: 2944.830046
+Nearest neighbor-2: Image58
+distanceApproximate: 3484.847055
+distanceTrue: 2946.663028
+Nearest neighbor-3: Image14
+distanceApproximate: 3574.128565
+distanceTrue: 2951.226355
+tAverageApproximate: 0.251952
+tAverageTrue: 0.742048
+MAF: 1.211066
+
+Query: Image3
+Nearest neighbor-1: Image53399
+distanceApproximate: 2072.169153
+distanceTrue: 2072.169153
+Nearest neighbor-2: Image27
+distanceApproximate: 2577.756777
+distanceTrue: 2101.558707
+Nearest neighbor-3: Image4
+distanceApproximate: 2789.186261
+distanceTrue: 2101.618186
+tAverageApproximate: 0.238680
+tAverageTrue: 0.773104
+MAF: 1.327161
+
+Query: Image4
+Nearest neighbor-1: Image5069
+distanceApproximate: 2613.706563
+distanceTrue: 2613.706563
+Nearest neighbor-2: Image58
+distanceApproximate: 3211.065088
+distanceTrue: 2677.476797
+Nearest neighbor-3: Image14
+distanceApproximate: 3429.249335
+distanceTrue: 2687.216776
+tAverageApproximate: 0.237527
+tAverageTrue: 0.612299
+MAF: 1.276134
+

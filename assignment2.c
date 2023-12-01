@@ -37,9 +37,10 @@ LSH* initLSHWithDataset(List* dataset, int k, int L, double R, double window) {
     Node* currentNode = dataset->head;
     while (currentNode) {
         insertIntoLSH(lsh, currentNode->vector);
-       // printf("Inserted vector into LSH: %s\n", currentNode->vector.name);
+       //printf("Inserted vector into LSH: %s\n", currentNode->vector.name);
         currentNode = currentNode->next;
     }
+	//printf("initLSHWithDataset out\n");
     return lsh;
 }
 
@@ -69,7 +70,7 @@ List* processQueryFile(char *queryFilePath, int *numLoadedImages) {
     return queryImages;
 }
 
-void processOutput(char *outputFilePath, List* queryResults, List* dataset, Vector queryVector, int N, double avgApproxTime) {
+void processOutput(char *outputFilePath, List* queryResults, List* dataset, Vector queryVector, int N, double avgApproxTime, int method) { // Added method as a parameter
     static FILE *outputFile = NULL;
     if (!outputFile) {
         outputFile = fopen(outputFilePath, "w");
@@ -77,9 +78,13 @@ void processOutput(char *outputFilePath, List* queryResults, List* dataset, Vect
             perror("Error opening output file");
             exit(EXIT_FAILURE);
         }
-        fprintf(outputFile, "GNNS Results\n");
+        if (method == 1) {
+            fprintf(outputFile, "GNNS Results\n");
+        } else { 
+            fprintf(outputFile, "MRNG Results\n");
+        }
     }
-
+	
     fprintf(outputFile, "Query: %s\n", queryVector.name);
 
     // Start time for exhaustive search
@@ -114,7 +119,10 @@ void processOutput(char *outputFilePath, List* queryResults, List* dataset, Vect
 
     free(trueNearestNeighbors);
 }
+
+
 int assignment2_main(int argc, char *argv[]) {
+    // Declare file paths and method variables
     char *inputFilePath = NULL;
     char *queryFilePath = NULL;
     char *outputFilePath = NULL;
@@ -123,6 +131,7 @@ int assignment2_main(int argc, char *argv[]) {
     int l = DEFAULT_L_MRNG;
     int numQueryImages = 0;
 
+    // Parse command line arguments
     int opt;
     while ((opt = getopt(argc, argv, "d:q:o:m:k:E:R:N:l:")) != -1) {
         switch (opt) {
@@ -141,40 +150,78 @@ int assignment2_main(int argc, char *argv[]) {
         }
     }
 
+    // Validate necessary arguments
     if (!inputFilePath || !queryFilePath || !outputFilePath || method <= 0 || method > 2) {
         fprintf(stderr, "Missing or invalid arguments.\n");
         exit(EXIT_FAILURE);
     }
 
+    // Process input file and initialize dataset
     List* images = processInputFile(inputFilePath);
+
     printf("Number of images in dataset: %d\n", images->size);
 
+    // Initialize LSH with the dataset
     LSH* lsh = initLSHWithDataset(images, DEFAULT_K_LSH, DEFAULT_L_LSH, R_LSH, DEFAULT_WINDOW_SIZE);
+	
+	GNNS*  gnns= NULL;
+
+	 
+    if (method == 1) {
+
+    // Initialize GNNS with LSH and dataset
+		gnns = initGNNS(lsh, images, k, DEFAULT_T, DEFAULT_RANDOM_RESTARTS, E, R_GNNS);
+	}
+
+    // Initialize MRNG with LSH if method 2 is selected
+    MRNG* mrng = NULL;
+	
+    if (method == 2) {
+        mrng = initMRNG(images, lsh, l, N, R_LSH);  // Pass LSH to MRNG
+    }
+
+    // Process query file and load query images
     List* queryImages = processQueryFile(queryFilePath, &numQueryImages);
 
-    GNNS* gnns = initGNNS(lsh, images, k, DEFAULT_T, DEFAULT_RANDOM_RESTARTS, E, R_GNNS);
-
-
+    // Process each query image
     Node* queryNode = queryImages->head;
     while (queryNode) {
         Vector queryVector = queryNode->vector;
-       // printf("Running GNNS for query image: %s\n", queryVector.name);
 
+        // Start time measurement for approximate search
         clock_t startApprox = clock();
-        List* queryResults = queryGNNS(gnns, queryVector, N);
+        List* queryResults = NULL;
+
+        // Use the selected method (GNNS or MRNG) to process the query
+        if (method == 1) {
+            queryResults = queryGNNS(gnns, queryVector, N);
+        } else if (method == 2) {
+	
+            queryResults = queryMRNG(mrng, queryVector, N);
+        }
+
+        // End time measurement for approximate search
         clock_t endApprox = clock();
         double avgApproxTime = ((double)(endApprox - startApprox)) / CLOCKS_PER_SEC / N;
 
-        processOutput(outputFilePath, queryResults, images, queryVector, N, avgApproxTime);
+        // Process and output the results
+		processOutput(outputFilePath, queryResults, images, queryVector, N, avgApproxTime, method); 
+			
+        // Free the list of query results
         freeList(queryResults);
+
+        // Move to the next query image
         queryNode = queryNode->next;
     }
-	
 
+    // Free memory allocated for LSH, GNNS, MRNG, images, and query images
     freeLSH(lsh);
+    freeGNNS(gnns);
+    if (mrng) {
+        freeMRNG(mrng);
+    }
     freeList(images);
     freeList(queryImages);
-    freeGNNS(gnns);
 
     return 0;
 }
